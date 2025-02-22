@@ -10,7 +10,7 @@ import shutil
 import zipfile
 
 app = Flask(__name__)
-socketio = SocketIO(app, async_mode="eventlet")
+socketio = SocketIO(app, async_mode="eventlet", cors_allowed_origins="*")
 
 # Crear carpetas necesarias si no existen
 os.makedirs('videos', exist_ok=True)
@@ -21,10 +21,6 @@ processing = False  # Estado del procesamiento
 @app.route("/")
 def home():
     return render_template("index.html")
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
 
 @app.route("/split", methods=["GET", "POST"])
 def split_media():
@@ -54,9 +50,13 @@ def split_media():
                     end = min(start + chunk_size, total_duration)
                     subclip = video_clip.subclip(start, end)
                     output_path = f"videos/{i+1}.mp4"
-                    subclip.write_videofile(output_path, codec="libx264", audio_codec="aac")
 
-                    socketio.emit("progress", {"progress": ((i + 1) / num_chunks) * 100})
+                    # 🔥 OPTIMIZACIÓN: Escribir video en baja resolución para acelerar
+                    subclip.write_videofile(output_path, codec="libx264", audio_codec="aac", preset="ultrafast", threads=4)
+
+                    progress = ((i + 1) / num_chunks) * 100
+                    socketio.emit("progress", {"progress": progress})
+                    print(f"✅ Video {i+1} procesado ({progress:.2f}%)")  # LOG EN TIEMPO REAL
                     eventlet.sleep(0)
                     file_list["videos"].append(output_path)
 
@@ -76,9 +76,12 @@ def split_media():
                     end = min(start + chunk_size, total_duration)
                     subclip = audio_clip.subclip(start, end)
                     output_path = f"audios/{i+1}.mp3"
-                    subclip.write_audiofile(output_path, codec="mp3")
 
-                    socketio.emit("progress", {"progress": ((i + 1) / num_chunks) * 100})
+                    subclip.write_audiofile(output_path, codec="mp3", bitrate="64k")
+
+                    progress = ((i + 1) / num_chunks) * 100
+                    socketio.emit("progress", {"progress": progress})
+                    print(f"✅ Audio {i+1} procesado ({progress:.2f}%)")  # LOG EN TIEMPO REAL
                     eventlet.sleep(0)
                     file_list["audios"].append(output_path)
 
@@ -121,7 +124,7 @@ def download_zip(folder):
 
 # 🔥 MODIFICACIÓN: Asegurar que Flask corre en el puerto correcto
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=10000, debug=True)  # 🔥 Cambia a 0.0.0.0 y usa el puerto 10000
+    socketio.run(app, host="0.0.0.0", port=10000, debug=True)
 
 
 
