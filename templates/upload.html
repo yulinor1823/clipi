@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Clipi - Editor de Video y Audio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+
+    <style>
+        /* 🌌 Estilos Generales */
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0d0d0d;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            font-size: 28px;
+            text-transform: uppercase;
+            margin-top: 20px;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        /* ⚡ Contenedor Principal */
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 15px;
+            box-shadow: 0px 0px 15px #ff00ff;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-size: 16px;
+            color: #00e1ff;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+
+        button {
+            background: linear-gradient(90deg, #ff00ff, #00e1ff);
+            border: none;
+            padding: 12px 20px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 0 10px #ff00ff;
+            transition: 0.3s ease-in-out;
+        }
+
+        button:hover {
+            box-shadow: 0 0 20px #00e1ff;
+            transform: scale(1.05);
+        }
+
+        /* 🌟 Barra de Progreso */
+        .progress-bar {
+            width: 100%;
+            background: #333;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+            box-shadow: 0px 0px 8px #ff00ff;
+        }
+
+        .progress {
+            width: 0%;
+            height: 20px;
+            background: linear-gradient(90deg, #ff00ff, #00e1ff);
+            text-align: center;
+            color: white;
+            line-height: 20px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* 🛰️ Diseño Responsivo */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>🚀 Clipi - Editor de Video y Audio</h2>
+    <p id="status">📂 Esperando archivos...</p>
+
+    <div class="container">
+        <form method="POST" enctype="multipart/form-data" action="/split" onsubmit="startProcessing()">
+            <label>🎥 Video:</label>
+            <input type="file" name="video_file" required>
+
+            <label>🎵 Audio (Opcional):</label>
+            <input type="file" name="audio_file">
+
+            <label>⏳ Segundos por corte:</label>
+            <input type="number" name="chunk_size" value="10" required>
+
+            <button type="submit">🚀 Cortar</button>
+        </form>
+
+        <div class="progress-bar">
+            <div class="progress" id="progress"><span id="progressText">0%</span></div>
+        </div>
+
+        <button onclick="clearFiles()">🗑️ Limpiar Archivos</button>
+    </div>
+
+    <script>
+        var socket = io();
+
+        socket.on("progress", function(data) {
+            document.getElementById("progress").style.width = data.progress + "%";
+            document.getElementById("progressText").innerText = Math.round(data.progress) + "%";
+        });
+
+        socket.on("status", function(data) {
+            document.getElementById("status").innerText = data.message;
+        });
+
+        function startProcessing() {
+            document.getElementById("status").innerText = "⏳ Procesando archivos...";
+            let progressBar = document.getElementById("progress");
+            let progressText = document.getElementById("progressText");
+
+            if (progressBar && progressText) {
+                progressBar.style.width = "0%";
+                progressText.innerText = "0%";
+            }
+        }
+
+        function clearFiles() {
+            fetch("/clear", { method: "POST" })
+            .then(() => {
+                alert("🗑️ Archivos eliminados correctamente.");
+                location.reload();
+            })
+            .catch(error => console.error("Error al limpiar archivos:", error));
+        }
+    </script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
