@@ -1,13 +1,13 @@
+import eventlet
+eventlet.monkey_patch()  # 🔥 Asegura que se ejecute antes de cualquier otra importación
+
 from flask import Flask, render_template, request, send_file, jsonify
 from flask_socketio import SocketIO
 import os
 import math
 import moviepy.editor as mp
-import eventlet
 import shutil
 import zipfile
-
-eventlet.monkey_patch()
 
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode="eventlet")
@@ -18,16 +18,13 @@ os.makedirs('audios', exist_ok=True)
 
 processing = False  # Estado del procesamiento
 
-
 @app.route("/")
 def home():
     return render_template("index.html")
 
-
 @app.route("/about")
 def about():
     return render_template("about.html")
-
 
 @app.route("/split", methods=["GET", "POST"])
 def split_media():
@@ -97,9 +94,7 @@ def split_media():
             socketio.emit("status", {"message": f"❌ Error: {str(e)}"})
             return jsonify({"status": "error", "message": str(e)})
 
-    # 🔥 Asegurar que la página `/split` muestra `upload.html`
     return render_template("upload.html")
-
 
 @app.route("/clear", methods=["POST"])
 def clear_files():
@@ -108,7 +103,6 @@ def clear_files():
             shutil.rmtree(folder)
         os.makedirs(folder, exist_ok=True)
     return jsonify({"status": "cleared"})
-
 
 @app.route("/download-zip/<folder>")
 def download_zip(folder):
@@ -125,9 +119,10 @@ def download_zip(folder):
 
     return send_file(zip_path, as_attachment=True)
 
-
+# 🔥 MODIFICACIÓN: Asegurar que Flask corre en el puerto correcto
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app, host="0.0.0.0", port=10000, debug=True)  # 🔥 Cambia a 0.0.0.0 y usa el puerto 10000
+
 
 
 
